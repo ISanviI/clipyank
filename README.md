@@ -1,6 +1,8 @@
 # clipyank
 
-A simple utility to sync your Vim yank register with the system clipboard.
+A simple utility to sync your Vim yank register with the system clipboard and also track clip history specifically for vim.
+
+> Note that it is not a daemon.
 
 ## Dependencies
 
@@ -106,9 +108,9 @@ nnoremap <leader>show :w !clipyank --recv<CR>
 
 ### Command Line
 
-**Show History:** `clipyank --show`
-**Send from file:** `cat my_file.txt | clipyank --send`
-**Send text to clipboard:** `echo "random text" | clipyank --send`
+**Show History:** `clipyank --show`  
+**Send from file:** `cat my_file.txt | clipyank --send`  
+**Send text to clipboard:** `echo "random text" | clipyank --send`  
 **Receive to file:** `clipyank --recv > my_file.txt`
 
 > You can always set shortcuts to the above mentioned commands in your shell config files like `.bashrc` or `.zshrc`.
