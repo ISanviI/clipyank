@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 Sanavi Sonwane
-# SPDX-License-Identifier: 0BSD
-
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99

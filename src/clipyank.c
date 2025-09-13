@@ -1,7 +1,3 @@
-/* SPDX-FileCopyrightText: 2025 Sanavi Sonwane
-   SPDX-License-Identifier: 0BSD
-*/
-
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
