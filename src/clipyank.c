@@ -14,6 +14,7 @@
 char* get_history_path();
 void add_to_history(const char *data, size_t data_size);
 void show_history();
+void exchange_clipboard_and_stdin(const char *copy_cmd, const char *paste_cmd);
 
 void send_to_clipboard(const char *copy_cmd) {
     char *buffer = malloc(INITIAL_BUFFER_SIZE);
@@ -77,6 +78,96 @@ void receive_from_clipboard(const char *paste_cmd) {
         fwrite(buffer, 1, n, stdout);
     }
     pclose(clipboard_process);
+}
+
+void exchange_clipboard_and_stdin(const char *copy_cmd, const char *paste_cmd) {
+    // 1. Read selected text from stdin
+    char *stdin_buffer = malloc(INITIAL_BUFFER_SIZE);
+    if (stdin_buffer == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    size_t stdin_capacity = INITIAL_BUFFER_SIZE;
+    size_t stdin_size = 0;
+    size_t n;
+
+    while ((n = fread(stdin_buffer + stdin_size, 1, stdin_capacity - stdin_size, stdin)) > 0) {
+        stdin_size += n;
+        if (stdin_size == stdin_capacity) {
+            stdin_capacity *= 2;
+            char *new_stdin_buffer = realloc(stdin_buffer, stdin_capacity);
+            if (new_stdin_buffer == NULL) {
+                perror("realloc");
+                free(stdin_buffer);
+                exit(EXIT_FAILURE);
+            }
+            stdin_buffer = new_stdin_buffer;
+        }
+    }
+
+    // 2. Get current clipboard content
+    char *clipboard_buffer = malloc(INITIAL_BUFFER_SIZE);
+    if (clipboard_buffer == NULL) {
+        perror("malloc");
+        free(stdin_buffer);
+        exit(EXIT_FAILURE);
+    }
+    size_t clipboard_capacity = INITIAL_BUFFER_SIZE;
+    size_t clipboard_size = 0;
+
+    FILE *clipboard_process_read = popen(paste_cmd, "r");
+    if (clipboard_process_read == NULL) {
+        if (errno == ENOENT) {
+            fprintf(stderr, "Error: Command not found. Is '%s' installed and in your PATH?\n", paste_cmd);
+        } else {
+            perror("popen");
+        }
+        free(stdin_buffer);
+        free(clipboard_buffer);
+        exit(EXIT_FAILURE);
+    }
+    while ((n = fread(clipboard_buffer + clipboard_size, 1, clipboard_capacity - clipboard_size, clipboard_process_read)) > 0) {
+        clipboard_size += n;
+        if (clipboard_size == clipboard_capacity) {
+            clipboard_capacity *= 2;
+            char *new_clipboard_buffer = realloc(clipboard_buffer, clipboard_capacity);
+            if (new_clipboard_buffer == NULL) {
+                perror("realloc");
+                free(stdin_buffer);
+                free(clipboard_buffer);
+                exit(EXIT_FAILURE);
+            }
+            clipboard_buffer = new_clipboard_buffer;
+        }
+    }
+    pclose(clipboard_process_read);
+
+    // 3. Send stdin content to clipboard
+    if (stdin_size > 0) {
+        FILE *clipboard_process_write = popen(copy_cmd, "w");
+        if (clipboard_process_write == NULL) {
+            if (errno == ENOENT) {
+                fprintf(stderr, "Error: Command not found. Is '%s' installed and in your PATH?\n", copy_cmd);
+            } else {
+                perror("popen");
+            }
+            free(stdin_buffer);
+            free(clipboard_buffer);
+            exit(EXIT_FAILURE);
+        }
+        fwrite(stdin_buffer, 1, stdin_size, clipboard_process_write);
+        pclose(clipboard_process_write);
+
+        add_to_history(stdin_buffer, stdin_size);
+    }
+
+    // 4. Print original clipboard content to stdout
+    if (clipboard_size > 0) {
+        fwrite(clipboard_buffer, 1, clipboard_size, stdout);
+    }
+
+    free(stdin_buffer);
+    free(clipboard_buffer);
 }
 
 char* get_history_path() {
@@ -167,7 +258,7 @@ void show_history() {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s --send|--recv|--show\n", argv[0]);
+        fprintf(stderr, "Usage: %s --send|--recv|--show|--exchange\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -191,8 +282,10 @@ int main(int argc, char *argv[]) {
         send_to_clipboard(copy_cmd);
     } else if (strcmp(argv[1], "--recv") == 0) {
         receive_from_clipboard(paste_cmd);
+    } else if (strcmp(argv[1], "--exchange") == 0) {
+        exchange_clipboard_and_stdin(copy_cmd, paste_cmd);
     } else {
-        fprintf(stderr, "Usage: %s --send|--recv|--show\n", argv[0]);
+        fprintf(stderr, "Usage: %s --send|--recv|--show|--exchange\n", argv[0]);
         return EXIT_FAILURE;
     }
 

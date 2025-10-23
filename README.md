@@ -93,6 +93,10 @@ vnoremap <leader>cp :!clipyank --send<CR>
 " Press `,cv` to paste (considering <leader> = ',')
 nnoremap <leader>cv :r !clipyank --recv<CR>
 
+" Exchange selected text with system clipboard (Visual mode)
+" Press `,cx` to exchange (considering <leader> = ',')
+vnoremap <leader>cx :!clipyank --exchange<CR>
+
 " Show clip history from clipyank (Normal mode)
 " Press `,show` to paste (considering <leader> = ',')
 nnoremap <leader>show :w !clipyank --recv<CR>
@@ -102,7 +106,8 @@ nnoremap <leader>show :w !clipyank --recv<CR>
 2. Restart Vim or run :so ~/.vimrc in Normal mode.
 3. To copy: Select text in Visual mode and press \cp (or your custom leader key + cp).
 4. To paste: In Normal mode, press \cv to paste from the system clipboard.
-5. To show history: In Normal mode, press \show to show clip history.
+5. To exchange: Select text in Visual mode and press \cx (or your custom leader key + cx).
+6. To show history: In Normal mode, press \show to show clip history.
 
 > To know your leader key, execute `:let mapleader` in vim normal mode. If it gives an error, no key is set and so default is (`\`).
 
@@ -112,5 +117,8 @@ nnoremap <leader>show :w !clipyank --recv<CR>
 **Send from file:** `cat my_file.txt | clipyank --send`  
 **Send text to clipboard:** `echo "random text" | clipyank --send`  
 **Receive to file:** `clipyank --recv > my_file.txt`
+**Exchange text:** `echo "selected text" | clipyank --exchange` (This will print clipboard content to stdout and send "selected text" to clipboard)
 
 > You can always set shortcuts to the above mentioned commands in your shell config files like `.bashrc` or `.zshrc`.
+
+```
